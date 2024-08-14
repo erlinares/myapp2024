@@ -211,7 +211,7 @@ def feature_engineering(dataset):
     del dataset["risk"]
     del dataset["Risk_good"]
     return dataset    
-    
+
 #writing simple text 
 
 st.title("Credit Card App")
@@ -250,7 +250,10 @@ if "Feature Engineering" in selected_page:
     st.write("""
     ## Feature Engineering
     New datset""")
-
+    if uploaded_file is not None:
+        dataset = feature_engineering(dataset)
+        st.write(dataset)
+        
 if "Modelado" in selected_page:
     st.write("""
     ## Entrenamiento con diferentes modelos
