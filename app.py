@@ -19,8 +19,28 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from sklearn.model_selection import KFold,cross_val_score
+#librerias de redes neuronales
+from tensorflow.keras.callbacks import ModelCheckpoint
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense, Activation, Flatten
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.utils import to_categorical
+import tensorflow as tf
 
-#definir funciones
+from sklearn.metrics import roc_curve, auc, roc_auc_score
+from sklearn.metrics import accuracy_score, confusion_matrix, fbeta_score, classification_report
+
+
+st.title("Credit Card App")
+
+uploaded_file = None
+dataset = None 
+X_train = None
+X_test = None
+y_train = None
+y_test = None
+modelNN = None
+    
 def get_eda(dataset):
     # Distribución de Creditos por Tipo de Casa
     trace0 = go.Bar(
@@ -183,6 +203,7 @@ def get_eda(dataset):
 
     st.plotly_chart(fig)
 
+
 #crear una funcion para aplicar dummies 
 def one_hot_encoder(df, nan_as_category = False):
     original_columns = list(df.columns)
@@ -190,7 +211,6 @@ def one_hot_encoder(df, nan_as_category = False):
     df = pd.get_dummies(df, columns= categorical_columns, dummy_na= nan_as_category, drop_first=True)
     new_columns = [c for c in df.columns if c not in original_columns]
     return df, new_columns
-
 
 def feature_engineering(dataset):
     #crear categorias por edad
@@ -224,8 +244,9 @@ def feature_engineering(dataset):
     del dataset["Age_cat"]
     del dataset["risk"]
     del dataset["Risk_good"]
-    return dataset    
-    
+    return dataset
+
+
 def modelling(dataset):
     #aplicamos una funcion logaritmo para ajustar los valores
     dataset['credit amount'] = np.log(dataset['credit amount'])
@@ -272,7 +293,6 @@ def modelling(dataset):
         fig.add_trace(go.Box(y=resultsBox[i:i+1].to_numpy()[0], name=names[i] ))
     st.plotly_chart(fig)
     return X_train, X_test, y_train, y_test
-
 
 #definimos el modelo
 def nn_model(learning_rate, y_train_categorical):
@@ -358,9 +378,11 @@ def TrainningNN(X_train, X_test, y_train, y_test):
     
     return NN_model
 
+    
 def predictionForm(modelNN):
     option_sex = ['male', 'female']
     option_job = [0,1,2,3]
+    #option_housing = ['own', 'rent', 'free']
     option_housing = ['own', 'rent']
     option_saving = ['moderate', 'quite rich', 'rich']
     option_checking = ['moderate', 'rich']
@@ -377,10 +399,10 @@ def predictionForm(modelNN):
     credit_amount = st.text_input('Monto del Crédito')
     select_duration = st.selectbox('Duración', option_duration)
     select_purpose = st.selectbox('Propósito', option_purpose)
-
-    if st.button('Enviar'):
-        prediction(age,select_sex,select_job,select_housing,select_saving,select_checking,credit_amount, select_duration, select_purpose)    
     
+    if st.button('Enviar'):
+        prediction(age,select_sex,select_job,select_housing,select_saving,select_checking,credit_amount, select_duration, select_purpose)
+        
 def prediction(age,sex,job,housing,saving,checking,amount,duration,purpose):
     # Crear dataframe
     data = {
@@ -544,7 +566,7 @@ def prediction(age,sex,job,housing,saving,checking,amount,duration,purpose):
     del datasetNew["Age_cat"]
     #aplicamos una funcion logaritmo para ajustar los valores
     datasetNew['credit_amount'] = np.log(int(datasetNew['credit_amount']))
-    #convertir variables a numpy
+    #convertir tensor a numpy
     X_values = datasetNew.values
     X_predict = X_values.astype(float)
 
@@ -560,11 +582,6 @@ def prediction(age,sex,job,housing,saving,checking,amount,duration,purpose):
         st.write("#### Crédito Malo")
     else:
         st.write("#### Crédito Bueno")
-
-
-#writing simple text 
-
-st.title("Credit Card App")
 
     
 # ============ Aplicación Principal  ============
@@ -588,14 +605,14 @@ if "Cargar Datos" in selected_page:
         dataset = pd.read_csv(uploaded_file)
     # Mostrar datos en una tabla
         st.write(dataset)
-        
+
 if "Explorar Datos" in selected_page:
     st.write("""
     ## Explore Data
     Distributions""")
     if uploaded_file is not None:
         get_eda(dataset)
-        
+
 if "Feature Engineering" in selected_page:
     st.write("""
     ## Feature Engineering
@@ -603,6 +620,7 @@ if "Feature Engineering" in selected_page:
     if uploaded_file is not None:
         dataset = feature_engineering(dataset)
         st.write(dataset)
+        
 
 if "Modelado" in selected_page:
     st.write("""
@@ -610,15 +628,18 @@ if "Modelado" in selected_page:
     Resultados""")
     if uploaded_file is not None:
         X_train, X_test, y_train, y_test = modelling(dataset)
-        
+
 if "Neural Network" in selected_page:
     st.write("""
     ## Neural Network
     Resultados""")
+    if uploaded_file is not None:
+        modelNN = TrainningNN(X_train, X_test, y_train, y_test)
 
-        
 if "Prediccion" in selected_page:
     st.write("""
     ## Predicción de un Crédito
     Capture los datos""")
-
+    if uploaded_file is not None:
+        predictionForm(modelNN)
+        
