@@ -19,16 +19,7 @@ from sklearn.svm import SVC
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from sklearn.model_selection import KFold,cross_val_score
-#librerias de redes neuronales
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Activation, Flatten
-from tensorflow.keras.optimizers import Adam
-from tensorflow.keras.utils import to_categorical
-import tensorflow as tf
 
-from sklearn.metrics import roc_curve, auc, roc_auc_score
-from sklearn.metrics import accuracy_score, confusion_matrix, fbeta_score, classification_report
 #definir funciones
 def get_eda(dataset):
     # Distribución de Creditos por Tipo de Casa
@@ -624,12 +615,10 @@ if "Neural Network" in selected_page:
     st.write("""
     ## Neural Network
     Resultados""")
-    if uploaded_file is not None:
-        modelNN = TrainningNN(X_train, X_test, y_train, y_test)
+
         
 if "Prediccion" in selected_page:
     st.write("""
     ## Predicción de un Crédito
     Capture los datos""")
-    if uploaded_file is not None:
-        predictionForm(modelNN) 
+
