@@ -16,8 +16,8 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
-from lightgbm import LGBMClassifier
+#from xgboost import XGBClassifier
+#from lightgbm import LGBMClassifier
 from sklearn.model_selection import KFold,cross_val_score
 #librerias de redes neuronales
 from tensorflow.keras.callbacks import ModelCheckpoint
@@ -29,18 +29,7 @@ import tensorflow as tf
 
 from sklearn.metrics import roc_curve, auc, roc_auc_score
 from sklearn.metrics import accuracy_score, confusion_matrix, fbeta_score, classification_report
-
-
-st.title("Credit Card App")
-
-uploaded_file = None
-dataset = None 
-X_train = None
-X_test = None
-y_train = None
-y_test = None
-modelNN = None
-    
+#definir funciones
 def get_eda(dataset):
     # Distribución de Creditos por Tipo de Casa
     trace0 = go.Bar(
@@ -203,7 +192,6 @@ def get_eda(dataset):
 
     st.plotly_chart(fig)
 
-
 #crear una funcion para aplicar dummies 
 def one_hot_encoder(df, nan_as_category = False):
     original_columns = list(df.columns)
@@ -211,6 +199,7 @@ def one_hot_encoder(df, nan_as_category = False):
     df = pd.get_dummies(df, columns= categorical_columns, dummy_na= nan_as_category, drop_first=True)
     new_columns = [c for c in df.columns if c not in original_columns]
     return df, new_columns
+
 
 def feature_engineering(dataset):
     #crear categorias por edad
@@ -244,15 +233,14 @@ def feature_engineering(dataset):
     del dataset["Age_cat"]
     del dataset["risk"]
     del dataset["Risk_good"]
-    return dataset
-
-
+    return dataset    
+    
 def modelling(dataset):
     #aplicamos una funcion logaritmo para ajustar los valores
     dataset['credit amount'] = np.log(dataset['credit amount'])
 
     # separamos la variable objetivo (y) de las variables predictoras (X)
-    X = dataset.drop('Risk_bad', 1).values
+    X = dataset.drop('Risk_bad', axis=1).values
     y = dataset['Risk_bad'].values
     
     # Spliting X and y into train and test version
@@ -269,8 +257,8 @@ def modelling(dataset):
     models.append(('NB', GaussianNB()))
     models.append(('RF', RandomForestClassifier()))
     models.append(('SVM', SVC(gamma='auto')))
-    models.append(('XGBM', XGBClassifier()))
-    models.append(('LGBM', LGBMClassifier()))
+    #models.append(('XGBM', XGBClassifier()))
+    #models.append(('LGBM', LGBMClassifier()))
 
     # Entrenamos y validamos cada modelo
     # arreglo para analizar los resultados
@@ -285,11 +273,12 @@ def modelling(dataset):
             names.append(name)
     #crear dataset de resultados
     resultsDF = pd.DataFrame (results, columns = ['V0','V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9'])
+    
     resultsBox = pd.DataFrame (results, columns = ['V0','V1', 'V2', 'V3', 'V4', 'V5', 'V6', 'V7', 'V8', 'V9'])
     resultsDF['Model'] = names
     #graficar resultados
     fig = go.Figure()
-    for i in range(9):
+    for i in range(7):
         fig.add_trace(go.Box(y=resultsBox[i:i+1].to_numpy()[0], name=names[i] ))
     st.plotly_chart(fig)
     return X_train, X_test, y_train, y_test
@@ -320,8 +309,9 @@ def TrainningNN(X_train, X_test, y_train, y_test):
     y_train_categorical = to_categorical( y_train, num_classes=2, dtype='float32')
 
     #convertir tensor a numpy
-    X_train = np.array(X_train)
-
+    #X_train = np.array(X_train)
+    X_train = np.asarray(X_train).astype(np.float32)
+    
     #semilla para aleatorios
     np.random.seed(7)
 
@@ -330,9 +320,11 @@ def TrainningNN(X_train, X_test, y_train, y_test):
     NN_model.fit(X_train, y_train_categorical, epochs=nb_epochs, batch_size=50)
 
     #convertir tensor en numpy array
-    X_test = np.array(X_test)
+    #X_test = np.array(X_test)
+    X_test = np.asarray(X_test).astype(np.float32)
 
     NNpredictions = NN_model.predict(X_test)
+    
 
     NN_prediction = list()
     for i in range(len(NNpredictions)):
@@ -378,14 +370,12 @@ def TrainningNN(X_train, X_test, y_train, y_test):
     
     return NN_model
 
-    
 def predictionForm(modelNN):
     option_sex = ['male', 'female']
     option_job = [0,1,2,3]
-    #option_housing = ['own', 'rent', 'free']
     option_housing = ['own', 'rent']
-    option_saving = ['moderate', 'quite rich', 'rich']
-    option_checking = ['moderate', 'rich']
+    option_saving = ['moderate', 'quite rich', 'rich','little']
+    option_checking = ['moderate', 'rich','little']
     option_duration = [6,7,8,9,10,11,12,15,18,24,27,30,36,42,45,48,60]
     option_purpose = ['radio/TV', 'education', 'furniture/equipment', 'car',
        'domestic appliances', 'repairs', 'vacation/others']
@@ -399,10 +389,10 @@ def predictionForm(modelNN):
     credit_amount = st.text_input('Monto del Crédito')
     select_duration = st.selectbox('Duración', option_duration)
     select_purpose = st.selectbox('Propósito', option_purpose)
-    
+
     if st.button('Enviar'):
-        prediction(age,select_sex,select_job,select_housing,select_saving,select_checking,credit_amount, select_duration, select_purpose)
-        
+        prediction(age,select_sex,select_job,select_housing,select_saving,select_checking,credit_amount, select_duration, select_purpose)    
+    
 def prediction(age,sex,job,housing,saving,checking,amount,duration,purpose):
     # Crear dataframe
     data = {
@@ -566,7 +556,7 @@ def prediction(age,sex,job,housing,saving,checking,amount,duration,purpose):
     del datasetNew["Age_cat"]
     #aplicamos una funcion logaritmo para ajustar los valores
     datasetNew['credit_amount'] = np.log(int(datasetNew['credit_amount']))
-    #convertir tensor a numpy
+    #convertir variables a numpy
     X_values = datasetNew.values
     X_predict = X_values.astype(float)
 
@@ -582,6 +572,11 @@ def prediction(age,sex,job,housing,saving,checking,amount,duration,purpose):
         st.write("#### Crédito Malo")
     else:
         st.write("#### Crédito Bueno")
+
+
+#writing simple text 
+
+st.title("Credit Card App")
 
     
 # ============ Aplicación Principal  ============
@@ -605,14 +600,14 @@ if "Cargar Datos" in selected_page:
         dataset = pd.read_csv(uploaded_file)
     # Mostrar datos en una tabla
         st.write(dataset)
-
+        
 if "Explorar Datos" in selected_page:
     st.write("""
     ## Explore Data
     Distributions""")
     if uploaded_file is not None:
         get_eda(dataset)
-
+        
 if "Feature Engineering" in selected_page:
     st.write("""
     ## Feature Engineering
@@ -620,7 +615,6 @@ if "Feature Engineering" in selected_page:
     if uploaded_file is not None:
         dataset = feature_engineering(dataset)
         st.write(dataset)
-        
 
 if "Modelado" in selected_page:
     st.write("""
@@ -628,18 +622,18 @@ if "Modelado" in selected_page:
     Resultados""")
     if uploaded_file is not None:
         X_train, X_test, y_train, y_test = modelling(dataset)
-
+        
 if "Neural Network" in selected_page:
     st.write("""
     ## Neural Network
     Resultados""")
     if uploaded_file is not None:
+        st.write(tf.__version__)
         modelNN = TrainningNN(X_train, X_test, y_train, y_test)
-
+        
 if "Prediccion" in selected_page:
     st.write("""
     ## Predicción de un Crédito
     Capture los datos""")
     if uploaded_file is not None:
-        predictionForm(modelNN)
-        
+        predictionForm(modelNN) 
