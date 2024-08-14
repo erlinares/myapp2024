@@ -1,5 +1,5 @@
-pip install --upgrade pip
+
 plotly==5.9.0
-scikit-learn==1.0.2
+scikit-learn==1.2.2
 xgboost==1.0.2
 lightgbm == 3.1.1
